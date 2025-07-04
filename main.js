@@ -425,11 +425,9 @@ document.getElementById('howToAccessBtn').onclick = function() {
 document.getElementById('btnCloseHelp').onclick = function() {
     helpPanel.classList.add('hidden');
 };
-// NUEVO: botón interactivo para volver al registro manualmente
 if (btnReturnToRegister) {
     btnReturnToRegister.onclick = function() {
         helpPanel.classList.add('hidden');
-        // Foco al primer campo del registro
         setTimeout(() => {
             let regInput = document.getElementById('regFullName');
             if (regInput) regInput.focus();
@@ -481,7 +479,7 @@ document.getElementById('helpEmailSend').onclick = function() {
         if (regInput) regInput.focus();
     }, 200);
 };
-   document.getElementById('helpWASend').onclick = function() {
+document.getElementById('helpWASend').onclick = function() {
     const name = document.getElementById('helpWAName').value.trim();
     const num = document.getElementById('helpWANum').value.trim();
     const err = document.getElementById('helpWAErr');
@@ -508,3 +506,4 @@ window.onload = function() {
         showPanel('auth');
     });
 };
+                
