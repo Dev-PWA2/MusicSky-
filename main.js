@@ -2,7 +2,7 @@
 let db;
 const DB_NAME = 'MusicSkyDB', DB_VERSION = 2;
 const MAX_MUSICS = 1000;
-const MAX_TOTAL_SIZE = 45 * 1024 * 1024; // 45MB
+const MAX_TOTAL_SIZE = 500 * 1024 * 1024; // 45MB
 
 function openDB(callback) {
     const request = window.indexedDB.open(DB_NAME, DB_VERSION);
@@ -454,7 +454,6 @@ document.getElementById('helpEmailSend').onclick = function() {
     err.innerText = '';
     if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
     if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email)) { err.innerText = 'Ingresa un correo Gmail válido.'; return; }
-    // mailto
     const asunto = encodeURIComponent("Solicitud de instrucciones para crear cuenta MusicSky");
     const body = encodeURIComponent(
         "Hola Sr. Desarrollador de MusicSky, el usuario " + name +
@@ -463,6 +462,7 @@ document.getElementById('helpEmailSend').onclick = function() {
     );
     window.open(`mailto:enzemajr@gmail.com?subject=${asunto}&body=${body}`, '_blank');
     alert('Se ha abierto tu aplicación de correo. El desarrollador recibirá tu solicitud.');
+    // Volver a la interfaz de registro
     helpPanel.classList.add('hidden');
 };
 document.getElementById('helpWASend').onclick = function() {
@@ -472,7 +472,6 @@ document.getElementById('helpWASend').onclick = function() {
     err.innerText = '';
     if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
     if (!/^\+?\d{7,16}$/.test(num)) { err.innerText = 'Ingresa un número de WhatsApp válido (ej: +240... o 240...).'; return; }
-    // WhatsApp web (envío directo al desarrollador)
     const msg = encodeURIComponent(
         "Hola Sr. Desarrollador de MusicSky, el usuario " + name +
         ", con el número " + num +
@@ -480,6 +479,7 @@ document.getElementById('helpWASend').onclick = function() {
     );
     window.open(`https://wa.me/240222084663?text=${msg}`, '_blank');
     alert('Se abrirá WhatsApp Web. El desarrollador recibirá tu solicitud.');
+    // Volver a la interfaz de registro
     helpPanel.classList.add('hidden');
 };
 
