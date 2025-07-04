@@ -1,7 +1,7 @@
 // ========== IndexedDB SETUP ==========
 let db;
 const DB_NAME = 'MusicSkyDB', DB_VERSION = 2;
-const MAX_MUSICS = 1000;
+const MAX_MUSICS = 1500;
 const MAX_TOTAL_SIZE = 500 * 1024 * 1024; // 45MB
 
 function openDB(callback) {
@@ -414,6 +414,8 @@ const helpPanel = document.getElementById('helpPanel');
 const helpStep1 = document.getElementById('helpStep1');
 const helpStepEmail = document.getElementById('helpStepEmail');
 const helpStepWhatsApp = document.getElementById('helpStepWhatsApp');
+const btnReturnToRegister = document.getElementById('btnReturnToRegister');
+
 document.getElementById('howToAccessBtn').onclick = function() {
     helpPanel.classList.remove('hidden');
     helpStep1.classList.remove('hidden');
@@ -447,6 +449,16 @@ document.getElementById('btnBackHelp1b').onclick = function() {
     helpStep1.classList.remove('hidden');
     helpStepWhatsApp.classList.add('hidden');
 };
+if (btnReturnToRegister) {
+    btnReturnToRegister.onclick = function() {
+        helpPanel.classList.add('hidden');
+        // Foco al primer campo del registro
+        setTimeout(() => {
+            let regInput = document.getElementById('regFullName');
+            if (regInput) regInput.focus();
+        }, 200);
+    };
+}
 document.getElementById('helpEmailSend').onclick = function() {
     const name = document.getElementById('helpEmailName').value.trim();
     const email = document.getElementById('helpEmailAddr').value.trim();
@@ -461,9 +473,12 @@ document.getElementById('helpEmailSend').onclick = function() {
         ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!"
     );
     window.open(`mailto:enzemajr@gmail.com?subject=${asunto}&body=${body}`, '_blank');
-    alert('Se ha abierto tu aplicación de correo. El desarrollador recibirá tu solicitud.');
-    // Volver a la interfaz de registro
+    // Retorna automáticamente al registro
     helpPanel.classList.add('hidden');
+    setTimeout(() => {
+        let regInput = document.getElementById('regFullName');
+        if (regInput) regInput.focus();
+    }, 200);
 };
 document.getElementById('helpWASend').onclick = function() {
     const name = document.getElementById('helpWAName').value.trim();
@@ -477,15 +492,4 @@ document.getElementById('helpWASend').onclick = function() {
         ", con el número " + num +
         ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!"
     );
-    window.open(`https://wa.me/240222084663?text=${msg}`, '_blank');
-    alert('Se abrirá WhatsApp Web. El desarrollador recibirá tu solicitud.');
-    // Volver a la interfaz de registro
-    helpPanel.classList.add('hidden');
-};
-
-// ========== INICIO ==========
-window.onload = function() {
-    openDB(function() {
-        showPanel('auth');
-    });
-};
+    window.open(`https:
