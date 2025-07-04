@@ -1,6 +1,6 @@
 // ========== INIT INDEXEDDB ==========
 const DB_NAME = 'MusicSkyDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // ¡SOLUCIÓN! Usa la versión igual o mayor que la existente
 
 let db = null;
 
@@ -255,7 +255,7 @@ document.getElementById('logoutBtn').addEventListener('click', function() {
 function showMainByRole() {
     let isAdmin = currentUser && currentUser.role === 'Administrador';
     document.getElementById('tab-users-li').style.display = isAdmin ? 'inline-block' : 'none';
-    document.getElementById('tab-upload').parentElement.style.display = 
+    document.getElementById('tab-upload').parentElement.style.display =
         (currentUser.role === 'Administrador' || currentUser.role === 'Usuario') ? 'inline-block' : 'none';
 }
 
@@ -287,12 +287,12 @@ function loadMusics() {
 }
 function canEditMusic(music) {
     if (!currentUser) return false;
-    return currentUser.role === 'Administrador' || 
+    return currentUser.role === 'Administrador' ||
         (currentUser.role === 'Usuario' && music.uploader === currentUser.email);
 }
 function canDeleteMusic(music) {
     if (!currentUser) return false;
-    return currentUser.role === 'Administrador' || 
+    return currentUser.role === 'Administrador' ||
         (currentUser.role === 'Usuario' && music.uploader === currentUser.email);
 }
 window.editMusic = function(id) {
@@ -332,14 +332,12 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
         return;
     }
     getAllMusics(function(musics) {
-        // NO LIMITAMOS LA CANTIDAD DE CANCIONES, SOLO POR ESPACIO DISPONIBLE EN EL NAVEGADOR 
         let totalSize = musics.reduce((ac, m) => ac + (m.url ? Math.round((m.url.length * 3) / 4) : 0), 0);
         let MAX_TOTAL_SIZE = 45 * 1024 * 1024;
         if (totalSize + file.size > MAX_TOTAL_SIZE) {
             errorDiv.innerText = 'Espacio insuficiente en la aplicación. Elimina canciones antiguas o sube archivos más pequeños.';
             return;
         }
-
         let reader = new FileReader();
         reader.onload = function(ev) {
             let music = {
