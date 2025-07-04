@@ -1,8 +1,9 @@
 // ========== IndexedDB SETUP ==========
 let db;
-const DB_NAME = 'MusicSkyDB', DB_VERSION = 1;
+const DB_NAME = 'MusicSkyDB', DB_VERSION = 2;
+const MAX_MUSICS = 1000;
+const MAX_TOTAL_SIZE = 45 * 1024 * 1024; // 45MB
 
-// Abrir/crear la base de datos
 function openDB(callback) {
     const request = window.indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = function(e) {
@@ -88,7 +89,6 @@ function validateEmail(email) {
     return /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email);
 }
 function validatePassword(pass) {
-    // 12 caracteres, al menos 1 mayúscula, 1 minúscula, 4 números, 2 símbolos (@ # &)
     if (pass.length !== 12) return false;
     const nums = (pass.match(/\d/g) || []).length;
     const syms = (pass.match(/[@#&]/g) || []).length;
@@ -128,7 +128,6 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
     let guestReason = document.getElementById('guestReason').value.trim();
     let guestConfirm = document.getElementById('guestConfirmName').value.trim();
 
-    // Validaciones
     if (!fullName || !email || !password || !role) {
         errorDiv.innerText = 'Todos los campos son obligatorios.';
         return;
@@ -151,7 +150,6 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
             return;
         }
         if (fullName !== guestConfirm) {
-            // Enviar mailto de intento fallido
             let now = new Date();
             let asunto = encodeURIComponent('Intento de acceso denegado (Invitado)');
             let cuerpo = `Nombre ingresado para confirmar no coincide.%0ANombre registro: ${fullName}%0ANombre reingresado: ${guestConfirm}%0ARazón: ${guestReason}%0AEmail: ${email}%0AFecha y hora: ${now.toLocaleString()}`;
@@ -163,7 +161,6 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
         }
     }
 
-    // Verificar si ya existe
     getUser(email, function(user) {
         if (user) {
             errorDiv.innerText = 'Ya existe una cuenta con este correo.';
@@ -177,13 +174,11 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
         };
         putUser(userObj, function(success) {
             if (success) {
-                // Enviar mailto REAL de registro
                 let asunto = encodeURIComponent('Nuevo registro en MusicSky');
                 let cuerpo = `Nombre: ${fullName}%0AEmail: ${email}%0ARol: ${role}%0ARazón: ${userObj.guestReason || 'N/A'}%0AFecha registro: ${userObj.date}`;
                 let mailto = `mailto:enzemajr@gmail.com?subject=${asunto}&body=${cuerpo}`;
                 window.open(mailto, '_blank');
                 clearRegisterForm();
-                // Mostrar panel de login automáticamente
                 let tab = new bootstrap.Tab(document.querySelector('#login-tab'));
                 tab.show();
                 document.getElementById('loginEmail').value = email;
@@ -216,7 +211,6 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
             errorDiv.innerText = 'Usuario bloqueado. Contacte con el administrador.';
             return;
         }
-        // Login correcto
         currentUser = user;
         document.getElementById('userNameSpan').innerText = user.fullName;
         document.getElementById('userRoleSpan').innerText = user.role;
@@ -236,10 +230,8 @@ document.getElementById('logoutBtn').addEventListener('click', function() {
 
 // ========== PANELES POR ROL ==========
 function showMainByRole() {
-    // Mostrar/ocultar pestañas según rol
     let isAdmin = currentUser && currentUser.role === 'Administrador';
     document.getElementById('tab-users-li').style.display = isAdmin ? 'inline-block' : 'none';
-    // Subir música: solo admin y usuario
     document.getElementById('tab-upload').parentElement.style.display = 
         (currentUser.role === 'Administrador' || currentUser.role === 'Usuario') ? 'inline-block' : 'none';
 }
@@ -312,6 +304,7 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
     let details = document.getElementById('musicDetails').value.trim();
     let errorDiv = document.getElementById('uploadError');
     let file = fileInput.files[0];
+
     if (!file || !/^audio\/mp3|audio\/mpeg|application\/octet-stream$/.test(file.type) && !file.name.endsWith('.mp3')) {
         errorDiv.innerText = 'Selecciona un archivo MP3 válido.';
         return;
@@ -320,29 +313,42 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
         errorDiv.innerText = 'Introduce un título para la música.';
         return;
     }
-    let reader = new FileReader();
-    reader.onload = function(ev) {
-        let music = {
-            title,
-            details,
-            uploader: currentUser.email,
-            uploaderName: currentUser.fullName,
-            date: new Date().toLocaleString(),
-            url: ev.target.result // base64
+
+    getAllMusics(function(musics) {
+        if (musics.length >= MAX_MUSICS) {
+            errorDiv.innerText = 'Límite de 1000 canciones alcanzado. Elimina alguna para subir nuevas.';
+            return;
+        }
+        let totalSize = musics.reduce((ac, m) => ac + (m.url ? Math.round((m.url.length * 3) / 4) : 0), 0);
+        if (totalSize + file.size > MAX_TOTAL_SIZE) {
+            errorDiv.innerText = 'Espacio insuficiente en la aplicación. Elimina canciones antiguas o sube archivos de menor tamaño.';
+            return;
+        }
+
+        let reader = new FileReader();
+        reader.onload = function(ev) {
+            let music = {
+                title,
+                details,
+                uploader: currentUser.email,
+                uploaderName: currentUser.fullName,
+                date: new Date().toLocaleString(),
+                url: ev.target.result 
+            };
+            putMusic(music, function(ok){
+                if (ok) {
+                    errorDiv.innerText = '';
+                    fileInput.value = '';
+                    document.getElementById('musicTitle').value = '';
+                    document.getElementById('musicDetails').value = '';
+                    loadMusics();
+                } else {
+                    errorDiv.innerText = 'Error al subir música.';
+                }
+            });
         };
-        putMusic(music, function(ok){
-            if (ok) {
-                errorDiv.innerText = '';
-                fileInput.value = '';
-                document.getElementById('musicTitle').value = '';
-                document.getElementById('musicDetails').value = '';
-                loadMusics();
-            } else {
-                errorDiv.innerText = 'Error al subir música.';
-            }
-        });
-    };
-    reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
+    });
 });
 
 // ========== GESTIÓN DE USUARIOS (ADMIN) ==========
@@ -401,6 +407,80 @@ window.editUserUI = function(email) {
             });
         }
     });
+};
+
+// ========== PANEL ¿CÓMO ACCEDER? ==========
+const helpPanel = document.getElementById('helpPanel');
+const helpStep1 = document.getElementById('helpStep1');
+const helpStepEmail = document.getElementById('helpStepEmail');
+const helpStepWhatsApp = document.getElementById('helpStepWhatsApp');
+document.getElementById('howToAccessBtn').onclick = function() {
+    helpPanel.classList.remove('hidden');
+    helpStep1.classList.remove('hidden');
+    helpStepEmail.classList.add('hidden');
+    helpStepWhatsApp.classList.add('hidden');
+};
+document.getElementById('btnCloseHelp').onclick = function() {
+    helpPanel.classList.add('hidden');
+};
+document.getElementById('btnHelpEmail').onclick = function() {
+    helpStep1.classList.add('hidden');
+    helpStepEmail.classList.remove('hidden');
+    helpStepWhatsApp.classList.add('hidden');
+    document.getElementById('helpEmailName').value = '';
+    document.getElementById('helpEmailAddr').value = '';
+    document.getElementById('helpEmailErr').innerText = '';
+};
+document.getElementById('btnHelpWhatsApp').onclick = function() {
+    helpStep1.classList.add('hidden');
+    helpStepWhatsApp.classList.remove('hidden');
+    helpStepEmail.classList.add('hidden');
+    document.getElementById('helpWAName').value = '';
+    document.getElementById('helpWANum').value = '';
+    document.getElementById('helpWAErr').innerText = '';
+};
+document.getElementById('btnBackHelp1a').onclick = function() {
+    helpStep1.classList.remove('hidden');
+    helpStepEmail.classList.add('hidden');
+};
+document.getElementById('btnBackHelp1b').onclick = function() {
+    helpStep1.classList.remove('hidden');
+    helpStepWhatsApp.classList.add('hidden');
+};
+document.getElementById('helpEmailSend').onclick = function() {
+    const name = document.getElementById('helpEmailName').value.trim();
+    const email = document.getElementById('helpEmailAddr').value.trim();
+    const err = document.getElementById('helpEmailErr');
+    err.innerText = '';
+    if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
+    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email)) { err.innerText = 'Ingresa un correo Gmail válido.'; return; }
+    // mailto
+    const asunto = encodeURIComponent("Solicitud de instrucciones para crear cuenta MusicSky");
+    const body = encodeURIComponent(
+        "Hola Sr. Desarrollador de MusicSky, el usuario " + name +
+        ", con el email " + email +
+        ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!"
+    );
+    window.open(`mailto:enzemajr@gmail.com?subject=${asunto}&body=${body}`, '_blank');
+    alert('Se ha abierto tu aplicación de correo. El desarrollador recibirá tu solicitud.');
+    helpPanel.classList.add('hidden');
+};
+document.getElementById('helpWASend').onclick = function() {
+    const name = document.getElementById('helpWAName').value.trim();
+    const num = document.getElementById('helpWANum').value.trim();
+    const err = document.getElementById('helpWAErr');
+    err.innerText = '';
+    if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
+    if (!/^\+?\d{7,16}$/.test(num)) { err.innerText = 'Ingresa un número de WhatsApp válido (ej: +240... o 240...).'; return; }
+    // WhatsApp web (envío directo al desarrollador)
+    const msg = encodeURIComponent(
+        "Hola Sr. Desarrollador de MusicSky, el usuario " + name +
+        ", con el número " + num +
+        ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!"
+    );
+    window.open(`https://wa.me/240222084663?text=${msg}`, '_blank');
+    alert('Se abrirá WhatsApp Web. El desarrollador recibirá tu solicitud.');
+    helpPanel.classList.add('hidden');
 };
 
 // ========== INICIO ==========
