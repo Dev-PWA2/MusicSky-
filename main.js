@@ -1,6 +1,6 @@
 // ========== INIT INDEXEDDB ==========
 const DB_NAME = 'MusicSkyDB';
-const DB_VERSION = 2; 
+const DB_VERSION = 9; 
 const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // Aumentado a 100 MB
 
 let db = null;
