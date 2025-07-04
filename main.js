@@ -1,8 +1,8 @@
 // ========== IndexedDB SETUP ==========
 let db;
 const DB_NAME = 'MusicSkyDB', DB_VERSION = 2;
-const MAX_MUSICS = 1000;
-const MAX_TOTAL_SIZE = 45 * 1024 * 1024; // 45MB
+const MAX_MUSICS = 1500;
+const MAX_TOTAL_SIZE = 500 * 1024 * 1024; // 45MB
 
 function openDB(callback) {
     const request = window.indexedDB.open(DB_NAME, DB_VERSION);
@@ -409,14 +409,29 @@ window.editUserUI = function(email) {
     });
 };
 
-// ========== PANEL ¿CÓMO ACCEDER? ==========
+    helpStepWhatsApp.classList.remove('hidden');
+    helpStepEmail.classList.add('hidden');
+    document.getElementById('helpWAName').value = '';
+    document.getElementById('helpWANum').value = '';
+    document.getElementById('helpWAErr').innerText = '';
+};
+document.getElementById('btnBackHelp1a').onclick = function() {
+    helpStep1.classList.remove('hidden');
+    helpStepEmail.classList.add('hidden');
+};
+document.getElementById('btnBackHelp1b').onclick = function() {
+    helpStep1.classList.remove('hidden');
+    helpStepWhatsApp.classList.add('hidden');
+};
+// ========== PANEL ¿CÓMO ACCEDER? - LÓGICA EN EL BOTÓN CONSULTA ==========
 const helpPanel = document.getElementById('helpPanel');
 const helpStep1 = document.getElementById('helpStep1');
 const helpStepEmail = document.getElementById('helpStepEmail');
 const helpStepWhatsApp = document.getElementById('helpStepWhatsApp');
+const btnConsulta = document.getElementById('consultaBtn');
 const btnReturnToRegister = document.getElementById('btnReturnToRegister');
 
-document.getElementById('howToAccessBtn').onclick = function() {
+btnConsulta.onclick = function () {
     helpPanel.classList.remove('hidden');
     helpStep1.classList.remove('hidden');
     helpStepEmail.classList.add('hidden');
@@ -472,7 +487,7 @@ document.getElementById('helpEmailSend').onclick = function() {
         ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!"
     );
     window.open(`mailto:enzemajr@gmail.com?subject=${asunto}&body=${body}`, '_blank');
-    // Retorna automáticamente al registro
+    // Oculta automáticamente el panel tras enviar
     helpPanel.classList.add('hidden');
     setTimeout(() => {
         let regInput = document.getElementById('regFullName');
@@ -492,7 +507,7 @@ document.getElementById('helpWASend').onclick = function() {
         ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!"
     );
     window.open(`https://wa.me/240222084663?text=${msg}`, '_blank');
-    // Retorna automáticamente al registro
+    // Oculta automáticamente el panel tras enviar
     helpPanel.classList.add('hidden');
     setTimeout(() => {
         let regInput = document.getElementById('regFullName');
