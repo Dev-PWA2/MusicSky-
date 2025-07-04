@@ -14,13 +14,13 @@
         .music-list audio { width: 100%; }
         .music-item { border-bottom: 1px solid #eee; padding: 10px 0; }
         .logo { font-size: 2rem; font-weight: bold; color: #4e54c8; letter-spacing: 1px;}
-        #devPanel {
+        #devPanel, #chatPanel {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(30,40,60,0.25); z-index: 3000;
             display: flex; align-items: center; justify-content: center;
         }
-        #devPanel .card { min-width: 340px; max-width: 90vw; }
-        #devPanel.hidden { display: none; }
+        #devPanel .card, #chatPanel .card { min-width: 340px; max-width: 90vw; }
+        #devPanel.hidden, #chatPanel.hidden { display: none; }
     </style>
 </head>
 <body>
@@ -55,8 +55,7 @@
                                 <label>Contraseña</label>
                                 <input type="password" class="form-control" id="regPassword" required>
                                 <div class="form-text">
-                                    Contraseña de 12 caracteres: 6 letras iniciales (primera mayúscula), 4 números y 2 símbolos (@ # &).<br>
-                                    Para Administrador: <b>Admini</b>..., para Usuario: <b>Usuari</b>...
+                                    Contraseña de 12 caracteres: 6 letras iniciales (primera mayúscula), 4 números y 2 símbolos (@ # &).
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -80,6 +79,7 @@
                             <button class="btn btn-primary w-100" id="registerBtn" type="submit">Registrarse</button>
                             <div class="text-center mt-2">
                                 <button class="btn btn-info" id="devBtn" type="button">DESARROLLADOR</button>
+                                <button class="btn btn-warning" id="chatBtn" type="button">CHATÉA</button>
                             </div>
                         </form>
                     </div>
@@ -101,7 +101,7 @@
             </div>
         </div>
     </div>
-    <!-- PANEL DESARROLLADOR (oculto por defecto) -->
+    <!-- PANEL DESARROLLADOR -->
     <div id="devPanel" class="hidden">
         <div class="card shadow">
             <div class="card-body">
@@ -138,6 +138,47 @@
                     <div class="mb-1 text-danger" id="devWAErr"></div>
                     <button class="btn btn-success w-100" id="devWASend">CONSULTAR AL DESARROLLADOR</button>
                     <button class="btn btn-link w-100 mt-2" id="btnDevBack1b">Volver</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- PANEL CHATÉA -->
+    <div id="chatPanel" class="hidden">
+        <div class="card shadow">
+            <div class="card-body">
+                <div id="chatStep1">
+                    <h5 class="mb-3">Chatea con el desarrollador</h5>
+                    <button class="btn btn-outline-primary w-100 mb-2" id="btnChatEmail">CHAT POR EMAIL</button>
+                    <button class="btn btn-outline-success w-100 mb-2" id="btnChatWhatsApp">CHAT POR WHATSAPP</button>
+                    <button class="btn btn-link w-100 mt-2" id="btnChatClose">Cerrar</button>
+                </div>
+                <div id="chatStepEmail" class="hidden">
+                    <h6>Chat por Email</h6>
+                    <div class="mb-2">
+                        <label>Nombre completo</label>
+                        <input type="text" class="form-control" id="chatEmailName">
+                    </div>
+                    <div class="mb-2">
+                        <label>Email para chatear</label>
+                        <input type="email" class="form-control" id="chatEmailAddr" placeholder="tucorreo@gmail.com">
+                    </div>
+                    <div class="mb-1 text-danger" id="chatEmailErr"></div>
+                    <button class="btn btn-primary w-100" id="chatEmailSend">ENVIAR</button>
+                    <button class="btn btn-link w-100 mt-2" id="btnChatBack1a">Volver</button>
+                </div>
+                <div id="chatStepWhatsApp" class="hidden">
+                    <h6>Chat por WhatsApp</h6>
+                    <div class="mb-2">
+                        <label>Nombre completo</label>
+                        <input type="text" class="form-control" id="chatWAName">
+                    </div>
+                    <div class="mb-2">
+                        <label>Número de WhatsApp</label>
+                        <input type="tel" class="form-control" id="chatWANum" placeholder="+240XXXXXXXX">
+                    </div>
+                    <div class="mb-1 text-danger" id="chatWAErr"></div>
+                    <button class="btn btn-success w-100" id="chatWASend">ENVIAR</button>
+                    <button class="btn btn-link w-100 mt-2" id="btnChatBack1b">Volver</button>
                 </div>
             </div>
         </div>
