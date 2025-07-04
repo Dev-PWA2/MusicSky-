@@ -1,6 +1,6 @@
 // ========== INIT INDEXEDDB ==========
 const DB_NAME = 'MusicSkyDB';
-const DB_VERSION = 10; 
+const DB_VERSION = 10; // Actualizado a una versión superior para evitar conflictos
 const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // Aumentado a 100 MB
 
 let db = null;
@@ -100,7 +100,7 @@ function validateEmail(email) {
     return /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email);
 }
 
-function validatePassword(pass, role) {
+function validatePassword(pass) {
     if (pass.length !== 12) return false;
     const rest = pass.slice(6);
     const nums = (rest.match(/\d/g) || []).length;
@@ -152,7 +152,7 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
         errorDiv.innerText = 'El correo debe ser Gmail válido.';
         return;
     }
-    if (!validatePassword(password, role)) {
+    if (!validatePassword(password)) {
         errorDiv.innerText = 'La contraseña no cumple los requisitos.';
         return;
     }
