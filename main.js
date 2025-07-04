@@ -1,6 +1,6 @@
 // ========== INIT INDEXEDDB ==========
 const DB_NAME = 'MusicSkyDB';
-const DB_VERSION = 2; // ¡SOLUCIÓN! Usa la versión igual o mayor que la existente
+const DB_VERSION = 9; // ¡SOLUCIÓN! Usa la versión igual o mayor que la existente
 
 let db = null;
 
