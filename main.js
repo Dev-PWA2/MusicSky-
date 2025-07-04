@@ -1,15 +1,16 @@
 // ========== INIT INDEXEDDB ==========
-// Reduce MAX_MUSICS a 100 (puedes ajustar a lo que prefieras >=50, recomendado para navegadores)
-// Repara el error de undefined en onerror mostrando el mensaje correcto
 const DB_NAME = 'MusicSkyDB';
 const DB_VERSION = 1;
-const MAX_MUSICS = 100; // Ahora 100, puedes ponerlo hasta 1000 si tu navegador lo soporta bien
-const MAX_TOTAL_SIZE = 45 * 1024 * 1024; // 45 MB
 
 let db = null;
 
 function openDB(callback) {
+    if (!window.indexedDB) {
+        alert("Este navegador no soporta IndexedDB. No se puede continuar.");
+        return;
+    }
     const req = indexedDB.open(DB_NAME, DB_VERSION);
+
     req.onupgradeneeded = function(e) {
         db = e.target.result;
         if (!db.objectStoreNames.contains('users')) {
@@ -23,11 +24,19 @@ function openDB(callback) {
     };
     req.onsuccess = function(e) {
         db = e.target.result;
-        if (callback) callback();
+        if (typeof callback === "function") callback();
     };
     req.onerror = function(e) {
-        alert("Error al abrir la base de datos: " + (e.target.error ? e.target.error.message : e.target.errorCode || e.target.error || "Error desconocido"));
-    }
+        let errMsg = "Error al abrir la base de datos: ";
+        if (e.target.error && e.target.error.message) {
+            errMsg += e.target.error.message;
+        } else if (e.target.errorCode) {
+            errMsg += e.target.errorCode;
+        } else {
+            errMsg += "Error desconocido";
+        }
+        alert(errMsg);
+    };
 }
 
 // ========== USERS ==========
@@ -323,11 +332,9 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
         return;
     }
     getAllMusics(function(musics) {
-        if (musics.length >= MAX_MUSICS) {
-            errorDiv.innerText = 'Límite de 100 canciones alcanzado. Elimina alguna para subir nuevas.';
-            return;
-        }
+        // NO LIMITAMOS LA CANTIDAD DE CANCIONES, SOLO POR ESPACIO DISPONIBLE EN EL NAVEGADOR 
         let totalSize = musics.reduce((ac, m) => ac + (m.url ? Math.round((m.url.length * 3) / 4) : 0), 0);
+        let MAX_TOTAL_SIZE = 45 * 1024 * 1024;
         if (totalSize + file.size > MAX_TOTAL_SIZE) {
             errorDiv.innerText = 'Espacio insuficiente en la aplicación. Elimina canciones antiguas o sube archivos más pequeños.';
             return;
