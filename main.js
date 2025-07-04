@@ -1,7 +1,9 @@
 // ========== INIT INDEXEDDB ==========
+// Reduce MAX_MUSICS a 100 (puedes ajustar a lo que prefieras >=50, recomendado para navegadores)
+// Repara el error de undefined en onerror mostrando el mensaje correcto
 const DB_NAME = 'MusicSkyDB';
-const DB_VERSION = 01;
-const MAX_MUSICS = 1000;
+const DB_VERSION = 1;
+const MAX_MUSICS = 100; // Ahora 100, puedes ponerlo hasta 1000 si tu navegador lo soporta bien
 const MAX_TOTAL_SIZE = 45 * 1024 * 1024; // 45 MB
 
 let db = null;
@@ -24,24 +26,27 @@ function openDB(callback) {
         if (callback) callback();
     };
     req.onerror = function(e) {
-        alert("Error abriendo la base de datos: " + e.target.errorCode);
+        alert("Error al abrir la base de datos: " + (e.target.error ? e.target.error.message : e.target.errorCode || e.target.error || "Error desconocido"));
     }
 }
 
 // ========== USERS ==========
 function getUser(email, cb) {
+    if (!db) return cb(null);
     const tx = db.transaction('users', 'readonly').objectStore('users').get(email);
     tx.onsuccess = e => cb(e.target.result);
     tx.onerror = () => cb(null);
 }
 
 function putUser(user, cb) {
+    if (!db) return cb(false);
     const tx = db.transaction('users', 'readwrite').objectStore('users').put(user);
     tx.onsuccess = () => cb(true);
     tx.onerror = () => cb(false);
 }
 
 function getAllUsers(cb) {
+    if (!db) return cb([]);
     const users = [];
     const store = db.transaction('users', 'readonly').objectStore('users');
     store.openCursor().onsuccess = function(e) {
@@ -54,6 +59,7 @@ function getAllUsers(cb) {
 }
 
 function deleteUser(email, cb) {
+    if (!db) return cb(false);
     const tx = db.transaction('users', 'readwrite').objectStore('users').delete(email);
     tx.onsuccess = () => cb(true);
     tx.onerror = () => cb(false);
@@ -61,6 +67,7 @@ function deleteUser(email, cb) {
 
 // ========== MUSICS ==========
 function getAllMusics(cb) {
+    if (!db) return cb([]);
     const musics = [];
     const store = db.transaction('musics', 'readonly').objectStore('musics');
     store.openCursor().onsuccess = function(e) {
@@ -73,12 +80,14 @@ function getAllMusics(cb) {
 }
 
 function putMusic(music, cb) {
+    if (!db) return cb(false);
     const tx = db.transaction('musics', 'readwrite').objectStore('musics').put(music);
     tx.onsuccess = () => cb(true);
     tx.onerror = () => cb(false);
 }
 
 function deleteMusic(id, cb) {
+    if (!db) return cb(false);
     const tx = db.transaction('musics', 'readwrite').objectStore('musics').delete(id);
     tx.onsuccess = () => cb(true);
     tx.onerror = () => cb(false);
@@ -96,8 +105,7 @@ function validatePassword(pass, role) {
     let rest = pass.slice(6);
     const nums = (rest.match(/\d/g) || []).length;
     const syms = (rest.match(/[@#&]/g) || []).length;
-    return nums === 4 && syms === 2 && 
-           /^[A-Z][a-z]{5}/.test(pass.slice(0,6)); // Primera mayúscula, resto minúsculas
+    return nums === 4 && syms === 2 && /^[A-Z][a-z]{5}/.test(pass.slice(0,6));
 }
 
 // ========== AUTH Y REGISTRO ==========
@@ -120,14 +128,12 @@ function clearLoginForm() {
     document.getElementById('loginError').innerText = '';
 }
 
-// Invitado: mostrar campos extra
 document.getElementById('regRole').addEventListener('change', function() {
     const v = this.value;
     document.getElementById('guestReasonDiv').classList.toggle('hidden', v !== 'Invitado');
     document.getElementById('guestConfirmDiv').classList.toggle('hidden', v !== 'Invitado');
 });
 
-// REGISTRO
 document.getElementById('registerForm').addEventListener('submit', function(e) {
     e.preventDefault();
     let fullName = document.getElementById('regFullName').value.trim();
@@ -160,7 +166,6 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
             return;
         }
         if (fullName !== guestConfirm) {
-            // Enviar mailto real
             let now = new Date();
             let asunto = encodeURIComponent('Intento de acceso denegado (Invitado)');
             let cuerpo = `Nombre registro: ${fullName}%0ANombre reingresado: ${guestConfirm}%0ARazón: ${guestReason}%0AEmail: ${email}%0AFecha y hora: ${now.toLocaleString()}`;
@@ -190,7 +195,6 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
                 let mailto = `mailto:enzemajr@gmail.com?subject=${asunto}&body=${cuerpo}`;
                 window.open(mailto, '_blank');
                 clearRegisterForm();
-                // Mostrar panel de login automáticamente
                 let tab = new bootstrap.Tab(document.querySelector('#login-tab'));
                 tab.show();
                 document.getElementById('loginEmail').value = email;
@@ -204,7 +208,6 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
     });
 });
 
-// LOGIN
 document.getElementById('loginForm').addEventListener('submit', function(e) {
     e.preventDefault();
     let email = document.getElementById('loginEmail').value.trim().toLowerCase();
@@ -233,7 +236,6 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     });
 });
 
-// LOGOUT
 document.getElementById('logoutBtn').addEventListener('click', function() {
     currentUser = null;
     showPanel('auth');
@@ -322,7 +324,7 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
     }
     getAllMusics(function(musics) {
         if (musics.length >= MAX_MUSICS) {
-            errorDiv.innerText = 'Límite de 1000 canciones alcanzado. Elimina alguna para subir nuevas.';
+            errorDiv.innerText = 'Límite de 100 canciones alcanzado. Elimina alguna para subir nuevas.';
             return;
         }
         let totalSize = musics.reduce((ac, m) => ac + (m.url ? Math.round((m.url.length * 3) / 4) : 0), 0);
