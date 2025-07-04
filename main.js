@@ -1,8 +1,8 @@
 // ========== IndexedDB SETUP ==========
 let db;
 const DB_NAME = 'MusicSkyDB', DB_VERSION = 2;
-const MAX_MUSICS = 1500;
-const MAX_TOTAL_SIZE = 500 * 1024 * 1024; // 45MB
+const MAX_MUSICS = 1000;
+const MAX_TOTAL_SIZE = 45 * 1024 * 1024; // 45MB
 
 function openDB(callback) {
     const request = window.indexedDB.open(DB_NAME, DB_VERSION);
@@ -425,6 +425,17 @@ document.getElementById('howToAccessBtn').onclick = function() {
 document.getElementById('btnCloseHelp').onclick = function() {
     helpPanel.classList.add('hidden');
 };
+// NUEVO: botón interactivo para volver al registro manualmente
+if (btnReturnToRegister) {
+    btnReturnToRegister.onclick = function() {
+        helpPanel.classList.add('hidden');
+        // Foco al primer campo del registro
+        setTimeout(() => {
+            let regInput = document.getElementById('regFullName');
+            if (regInput) regInput.focus();
+        }, 200);
+    };
+}
 document.getElementById('btnHelpEmail').onclick = function() {
     helpStep1.classList.add('hidden');
     helpStepEmail.classList.remove('hidden');
@@ -449,16 +460,6 @@ document.getElementById('btnBackHelp1b').onclick = function() {
     helpStep1.classList.remove('hidden');
     helpStepWhatsApp.classList.add('hidden');
 };
-if (btnReturnToRegister) {
-    btnReturnToRegister.onclick = function() {
-        helpPanel.classList.add('hidden');
-        // Foco al primer campo del registro
-        setTimeout(() => {
-            let regInput = document.getElementById('regFullName');
-            if (regInput) regInput.focus();
-        }, 200);
-    };
-}
 document.getElementById('helpEmailSend').onclick = function() {
     const name = document.getElementById('helpEmailName').value.trim();
     const email = document.getElementById('helpEmailAddr').value.trim();
@@ -480,7 +481,7 @@ document.getElementById('helpEmailSend').onclick = function() {
         if (regInput) regInput.focus();
     }, 200);
 };
-document.getElementById('helpWASend').onclick = function() {
+   document.getElementById('helpWASend').onclick = function() {
     const name = document.getElementById('helpWAName').value.trim();
     const num = document.getElementById('helpWANum').value.trim();
     const err = document.getElementById('helpWAErr');
