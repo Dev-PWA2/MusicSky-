@@ -492,4 +492,18 @@ document.getElementById('helpWASend').onclick = function() {
         ", con el número " + num +
         ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!"
     );
-    window.open(`https:
+    window.open(`https://wa.me/240222084663?text=${msg}`, '_blank');
+    // Retorna automáticamente al registro
+    helpPanel.classList.add('hidden');
+    setTimeout(() => {
+        let regInput = document.getElementById('regFullName');
+        if (regInput) regInput.focus();
+    }, 200);
+};
+
+// ========== INICIO ==========
+window.onload = function() {
+    openDB(function() {
+        showPanel('auth');
+    });
+};
