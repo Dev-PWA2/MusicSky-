@@ -1,6 +1,6 @@
-/ ========== INIT INDEXEDDB ==========
+// ========== INIT INDEXEDDB ==========
 const DB_NAME = 'MusicSkyDB';
-const DB_VERSION = 9; 
+const DB_VERSION = 2; 
 const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // Aumentado a 100 MB
 
 let db = null;
@@ -34,18 +34,21 @@ function openDB(callback) {
 
 // ========== USERS ==========
 function getUser(email, cb) {
+    if (!db) return cb(null);
     const tx = db.transaction('users', 'readonly').objectStore('users').get(email);
     tx.onsuccess = e => cb(e.target.result);
     tx.onerror = () => cb(null);
 }
 
 function putUser(user, cb) {
+    if (!db) return cb(false);
     const tx = db.transaction('users', 'readwrite').objectStore('users').put(user);
     tx.onsuccess = () => cb(true);
     tx.onerror = () => cb(false);
 }
 
 function getAllUsers(cb) {
+    if (!db) return cb([]);
     const users = [];
     const store = db.transaction('users', 'readonly').objectStore('users');
     store.openCursor().onsuccess = function(e) {
@@ -58,6 +61,7 @@ function getAllUsers(cb) {
 }
 
 function deleteUser(email, cb) {
+    if (!db) return cb(false);
     const tx = db.transaction('users', 'readwrite').objectStore('users').delete(email);
     tx.onsuccess = () => cb(true);
     tx.onerror = () => cb(false);
@@ -65,6 +69,7 @@ function deleteUser(email, cb) {
 
 // ========== MUSICS ==========
 function getAllMusics(cb) {
+    if (!db) return cb([]);
     const musics = [];
     const store = db.transaction('musics', 'readonly').objectStore('musics');
     store.openCursor().onsuccess = function(e) {
@@ -77,12 +82,14 @@ function getAllMusics(cb) {
 }
 
 function putMusic(music, cb) {
+    if (!db) return cb(false);
     const tx = db.transaction('musics', 'readwrite').objectStore('musics').put(music);
     tx.onsuccess = () => cb(true);
     tx.onerror = () => cb(false);
 }
 
 function deleteMusic(id, cb) {
+    if (!db) return cb(false);
     const tx = db.transaction('musics', 'readwrite').objectStore('musics').delete(id);
     tx.onsuccess = () => cb(true);
     tx.onerror = () => cb(false);
@@ -95,13 +102,10 @@ function validateEmail(email) {
 
 function validatePassword(pass, role) {
     if (pass.length !== 12) return false;
-    let prefix = role === "Administrador" ? "Admini" : role === "Usuario" ? "Usuari" : "";
-    if (prefix && !pass.startsWith(prefix)) return false;
-    let rest = pass.slice(6);
+    const rest = pass.slice(6);
     const nums = (rest.match(/\d/g) || []).length;
     const syms = (rest.match(/[@#&]/g) || []).length;
-    return nums === 4 && syms === 2 && 
-           /^[A-Z][a-z]{5}/.test(pass.slice(0,6)); // Primera mayúscula, resto minúsculas
+    return nums === 4 && syms === 2 && /^[A-Z][a-z]{5}/.test(pass.slice(0,6));
 }
 
 // ========== AUTH Y REGISTRO ==========
@@ -124,14 +128,12 @@ function clearLoginForm() {
     document.getElementById('loginError').innerText = '';
 }
 
-// Invitado: mostrar campos extra
 document.getElementById('regRole').addEventListener('change', function() {
     const v = this.value;
     document.getElementById('guestReasonDiv').classList.toggle('hidden', v !== 'Invitado');
     document.getElementById('guestConfirmDiv').classList.toggle('hidden', v !== 'Invitado');
 });
 
-// REGISTRO
 document.getElementById('registerForm').addEventListener('submit', function(e) {
     e.preventDefault();
     let fullName = document.getElementById('regFullName').value.trim();
@@ -164,7 +166,6 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
             return;
         }
         if (fullName !== guestConfirm) {
-            // Enviar mailto real
             let now = new Date();
             let asunto = encodeURIComponent('Intento de acceso denegado (Invitado)');
             let cuerpo = `Nombre registro: ${fullName}%0ANombre reingresado: ${guestConfirm}%0ARazón: ${guestReason}%0AEmail: ${email}%0AFecha y hora: ${now.toLocaleString()}`;
@@ -194,7 +195,6 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
                 let mailto = `mailto:enzemajr@gmail.com?subject=${asunto}&body=${cuerpo}`;
                 window.open(mailto, '_blank');
                 clearRegisterForm();
-                // Mostrar panel de login automáticamente
                 let tab = new bootstrap.Tab(document.querySelector('#login-tab'));
                 tab.show();
                 document.getElementById('loginEmail').value = email;
@@ -208,7 +208,6 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
     });
 });
 
-// LOGIN
 document.getElementById('loginForm').addEventListener('submit', function(e) {
     e.preventDefault();
     let email = document.getElementById('loginEmail').value.trim().toLowerCase();
@@ -237,7 +236,6 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     });
 });
 
-// LOGOUT
 document.getElementById('logoutBtn').addEventListener('click', function() {
     currentUser = null;
     showPanel('auth');
@@ -248,7 +246,7 @@ document.getElementById('logoutBtn').addEventListener('click', function() {
 function showMainByRole() {
     let isAdmin = currentUser && currentUser.role === 'Administrador';
     document.getElementById('tab-users-li').style.display = isAdmin ? 'inline-block' : 'none';
-    document.getElementById('tab-upload').parentElement.style.display = 
+    document.getElementById('tab-upload').parentElement.style.display =
         (currentUser.role === 'Administrador' || currentUser.role === 'Usuario') ? 'inline-block' : 'none';
 }
 
@@ -280,12 +278,12 @@ function loadMusics() {
 }
 function canEditMusic(music) {
     if (!currentUser) return false;
-    return currentUser.role === 'Administrador' || 
+    return currentUser.role === 'Administrador' ||
         (currentUser.role === 'Usuario' && music.uploader === currentUser.email);
 }
 function canDeleteMusic(music) {
     if (!currentUser) return false;
-    return currentUser.role === 'Administrador' || 
+    return currentUser.role === 'Administrador' ||
         (currentUser.role === 'Usuario' && music.uploader === currentUser.email);
 }
 window.editMusic = function(id) {
@@ -325,16 +323,11 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
         return;
     }
     getAllMusics(function(musics) {
-        if (musics.length >= MAX_MUSICS) {
-            errorDiv.innerText = 'Límite de 1000 canciones alcanzado. Elimina alguna para subir nuevas.';
-            return;
-        }
         let totalSize = musics.reduce((ac, m) => ac + (m.url ? Math.round((m.url.length * 3) / 4) : 0), 0);
         if (totalSize + file.size > MAX_TOTAL_SIZE) {
             errorDiv.innerText = 'Espacio insuficiente en la aplicación. Elimina canciones antiguas o sube archivos más pequeños.';
             return;
         }
-
         let reader = new FileReader();
         reader.onload = function(ev) {
             let music = {
@@ -424,16 +417,17 @@ const devPanel = document.getElementById('devPanel');
 const devStep1 = document.getElementById('devStep1');
 const devStepEmail = document.getElementById('devStepEmail');
 const devStepWhatsApp = document.getElementById('devStepWhatsApp');
-document.getElementById('devBtn').onclick = function() {
+
+document.getElementById('devBtn').onclick = function () {
     devPanel.classList.remove('hidden');
     devStep1.classList.remove('hidden');
     devStepEmail.classList.add('hidden');
     devStepWhatsApp.classList.add('hidden');
 };
-document.getElementById('btnDevClose').onclick = function() {
+document.getElementById('btnDevClose').onclick = function () {
     devPanel.classList.add('hidden');
 };
-document.getElementById('btnDevEmail').onclick = function() {
+document.getElementById('btnDevEmail').onclick = function () {
     devStep1.classList.add('hidden');
     devStepEmail.classList.remove('hidden');
     devStepWhatsApp.classList.add('hidden');
@@ -441,7 +435,7 @@ document.getElementById('btnDevEmail').onclick = function() {
     document.getElementById('devEmailAddr').value = '';
     document.getElementById('devEmailErr').innerText = '';
 };
-document.getElementById('btnDevWhatsApp').onclick = function() {
+document.getElementById('btnDevWhatsApp').onclick = function () {
     devStep1.classList.add('hidden');
     devStepWhatsApp.classList.remove('hidden');
     devStepEmail.classList.add('hidden');
@@ -449,44 +443,24 @@ document.getElementById('btnDevWhatsApp').onclick = function() {
     document.getElementById('devWANum').value = '';
     document.getElementById('devWAErr').innerText = '';
 };
-document.getElementById('btnDevBack1a').onclick = function() {
+document.getElementById('btnDevBack1a').onclick = function () {
     devStep1.classList.remove('hidden');
     devStepEmail.classList.add('hidden');
 };
-document.getElementById('btnDevBack1b').onclick = function() {
+document.getElementById('btnDevBack1b').onclick = function () {
     devStep1.classList.remove('hidden');
     devStepWhatsApp.classList.add('hidden');
 };
-document.getElementById('devEmailSend').onclick = function() {
+document.getElementById('devEmailSend').onclick = function () {
     const name = document.getElementById('devEmailName').value.trim();
     const email = document.getElementById('devEmailAddr').value.trim();
     const err = document.getElementById('devEmailErr');
     err.innerText = '';
     if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
-    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email)) { err.innerText = 'Ingresa un correo Gmail válido.'; return; }
+    if (!validateEmail(email)) { err.innerText = 'Ingresa un correo Gmail válido.'; return; }
     const asunto = encodeURIComponent("Solicitud de instrucciones para crear cuenta MusicSky");
-    const body = encodeURIComponent(
-        "Hola Sr. Desarrollador de MusicSky, el usuario " + name +
-        ", con el email " + email +
-        ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!"
-    );
+    const body = encodeURIComponent("Hola Sr. Desarrollador de MusicSky, el usuario " + name + ", con el email " + email + ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!");
     window.open(`mailto:enzemajr@gmail.com?subject=${asunto}&body=${body}`, '_blank');
-    devPanel.classList.add('hidden');
-};
-document.getElementById('devWASend').onclick = function() {
-    const name = document.getElementById('devWAName').value.trim();
-    const num = document.getElementById('devWANum').value.trim();
-    const err = document.getElementById('devWAErr');
-    err.innerText = '';
-    if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
-    if (!/^\+?\d{7,16}$/.test(num)) { err.innerText = 'Ingresa un número de WhatsApp válido (ej: +240... o 240...).'; return; }
-    const msg = encodeURIComponent(
-        "Hola Sr. Desarrollador de MusicSky, el usuario " + name +
-        ", con el número " + num +
-        ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!"
-    );
-    window.open(`https://wa.me/240222084663?text=${msg}`, '_blank');
-    devPanel.classList.add('hidden');
 };
 
 // ========== PANEL CHATÉA ==========
@@ -534,7 +508,7 @@ document.getElementById('chatEmailSend').onclick = function () {
     const err = document.getElementById('chatEmailErr');
     err.innerText = '';
     if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
-    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email)) { err.innerText = 'Ingresa un correo Gmail válido.'; return; }
+    if (!validateEmail(email)) { err.innerText = 'Ingresa un correo Gmail válido.'; return; }
     const asunto = encodeURIComponent("USUARIO DE MusicSky");
     const body = encodeURIComponent("BIENVENIDO AL ESPACIO DE CHAT CON EL DESARROLLADOR DE MusicSky!");
     window.open(`mailto:enzemajr@gmail.com?subject=${asunto}&body=${body}`, '_blank');
