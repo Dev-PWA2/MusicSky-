@@ -1,6 +1,6 @@
 // ========== INIT INDEXEDDB ==========
 const DB_NAME = 'MusicSkyDB';
-const DB_VERSION = 15; // Incrementado para actualizar la base de datos
+const DB_VERSION = 16; // Incrementado para actualizar la base de datos
 const MAX_TOTAL_SIZE = 500 * 1024 * 1024; // Ampliado a 500 MB
 
 let db = null;
@@ -394,6 +394,128 @@ window.editUserUI = function(email) {
             });
         }
     });
+};
+
+// ========== PANEL DESARROLLADOR ==========
+const devPanel = document.getElementById('devPanel');
+const devStep1 = document.getElementById('devStep1');
+const devStepEmail = document.getElementById('devStepEmail');
+const devStepWhatsApp = document.getElementById('devStepWhatsApp');
+
+document.getElementById('devBtn').onclick = function () {
+    devPanel.classList.remove('hidden');
+    devStep1.classList.remove('hidden');
+    devStepEmail.classList.add('hidden');
+    devStepWhatsApp.classList.add('hidden');
+};
+document.getElementById('btnDevClose').onclick = function () {
+    devPanel.classList.add('hidden');
+};
+document.getElementById('btnDevEmail').onclick = function () {
+    devStep1.classList.add('hidden');
+    devStepEmail.classList.remove('hidden');
+    devStepWhatsApp.classList.add('hidden');
+    document.getElementById('devEmailName').value = '';
+    document.getElementById('devEmailAddr').value = '';
+    document.getElementById('devEmailErr').innerText = '';
+};
+document.getElementById('btnDevWhatsApp').onclick = function () {
+    devStep1.classList.add('hidden');
+    devStepWhatsApp.classList.remove('hidden');
+    devStepEmail.classList.add('hidden');
+    document.getElementById('devWAName').value = '';
+    document.getElementById('devWANum').value = '';
+    document.getElementById('devWAErr').innerText = '';
+};
+document.getElementById('btnDevBack1a').onclick = function () {
+    devStep1.classList.remove('hidden');
+    devStepEmail.classList.add('hidden');
+};
+document.getElementById('btnDevBack1b').onclick = function () {
+    devStep1.classList.remove('hidden');
+    devStepWhatsApp.classList.add('hidden');
+};
+document.getElementById('devEmailSend').onclick = function () {
+    const name = document.getElementById('devEmailName').value.trim();
+    const email = document.getElementById('devEmailAddr').value.trim();
+    const err = document.getElementById('devEmailErr');
+    err.innerText = '';
+    if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
+    if (!validateEmail(email)) { err.innerText = 'Ingresa un correo Gmail válido.'; return; }
+    const asunto = encodeURIComponent("Solicitud de instrucciones para crear cuenta MusicSky");
+    const body = encodeURIComponent("Hola Sr. Desarrollador de MusicSky, el usuario " + name + ", con el email " + email + ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!");
+    window.open(`mailto:enzemajr@gmail.com?subject=${asunto}&body=${body}`, '_blank');
+};
+document.getElementById('devWASend').onclick = function () {
+    const name = document.getElementById('devWAName').value.trim();
+    const num = document.getElementById('devWANum').value.trim();
+    const err = document.getElementById('devWAErr');
+    err.innerText = '';
+    if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
+    if (!/^\+?\d{7,16}$/.test(num)) { err.innerText = 'Ingresa un número de WhatsApp válido.'; return; }
+    const msg = encodeURIComponent("Hola Sr. Desarrollador de MusicSky, el usuario " + name + ", con el número " + num + ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!");
+    window.open(`https://wa.me/${num}?text=${msg}`, '_blank'); // Fixed WhatsApp URL for developer contact
+};
+
+// ========== PANEL CHATÉA ==========
+const chatPanel = document.getElementById('chatPanel');
+const chatStep1 = document.getElementById('chatStep1');
+const chatStepEmail = document.getElementById('chatStepEmail');
+const chatStepWhatsApp = document.getElementById('chatStepWhatsApp');
+
+document.getElementById('chatBtn').onclick = function () {
+    chatPanel.classList.remove('hidden');
+    chatStep1.classList.remove('hidden');
+    chatStepEmail.classList.add('hidden');
+    chatStepWhatsApp.classList.add('hidden');
+};
+document.getElementById('btnChatClose').onclick = function () {
+    chatPanel.classList.add('hidden');
+};
+document.getElementById('btnChatEmail').onclick = function () {
+    chatStep1.classList.add('hidden');
+    chatStepEmail.classList.remove('hidden');
+    chatStepWhatsApp.classList.add('hidden');
+    document.getElementById('chatEmailName').value = '';
+    document.getElementById('chatEmailAddr').value = '';
+    document.getElementById('chatEmailErr').innerText = '';
+};
+document.getElementById('btnChatWhatsApp').onclick = function () {
+    chatStep1.classList.add('hidden');
+    chatStepWhatsApp.classList.remove('hidden');
+    chatStepEmail.classList.add('hidden');
+    document.getElementById('chatWAName').value = '';
+    document.getElementById('chatWANum').value = '';
+    document.getElementById('chatWAErr').innerText = '';
+};
+document.getElementById('btnChatBack1a').onclick = function () {
+    chatStep1.classList.remove('hidden');
+    chatStepEmail.classList.add('hidden');
+};
+document.getElementById('btnChatBack1b').onclick = function () {
+    chatStep1.classList.remove('hidden');
+    chatStepWhatsApp.classList.add('hidden');
+};
+document.getElementById('chatEmailSend').onclick = function () {
+    const name = document.getElementById('chatEmailName').value.trim();
+    const email = document.getElementById('chatEmailAddr').value.trim();
+    const err = document.getElementById('chatEmailErr');
+    err.innerText = '';
+    if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
+    if (!validateEmail(email)) { err.innerText = 'Ingresa un correo Gmail válido.'; return; }
+    const asunto = encodeURIComponent("USUARIO DE MusicSky");
+    const body = encodeURIComponent("BIENVENIDO AL ESPACIO DE CHAT CON EL DESARROLLADOR DE MusicSky!");
+    window.open(`mailto:enzemajr@gmail.com?subject=${asunto}&body=${body}`, '_blank');
+};
+document.getElementById('chatWASend').onclick = function () {
+    const name = document.getElementById('chatWAName').value.trim();
+    const num = document.getElementById('chatWANum').value.trim();
+    const err = document.getElementById('chatWAErr');
+    err.innerText = '';
+    if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
+    if (!/^\+?\d{7,16}$/.test(num)) { err.innerText = 'Ingresa un número de WhatsApp válido.'; return; }
+    const msg = encodeURIComponent("USUARIO DE MusicSky\nBIENVENIDO AL ESPACIO DE CHAT CON EL DESARROLLADOR DE MusicSky!");
+    window.open(`https://wa.me/${num}?text=${msg}`, '_blank'); // Fixed WhatsApp URL for user contact
 };
 
 // ========== INICIO ==========
