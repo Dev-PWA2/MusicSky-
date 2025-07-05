@@ -1,7 +1,7 @@
 // ========== INIT INDEXEDDB ==========
 const DB_NAME = 'MusicSkyDB';
-const DB_VERSION = 11; // Incrementado para actualizar la base de datos
-const MAX_TOTAL_SIZE = 250 * 1024 * 1024; // Ampliado a 250 MB
+const DB_VERSION = 12; // Incrementado para actualizar la base de datos
+const MAX_TOTAL_SIZE = 500 * 1024 * 1024; // Ampliado a 500 MB
 
 let db = null;
 
@@ -266,7 +266,7 @@ document.getElementById('devWASend').onclick = function () {
     if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
     if (!/^\+?\d{7,16}$/.test(num)) { err.innerText = 'Ingresa un número de WhatsApp válido.'; return; }
     const msg = encodeURIComponent("Hola Sr. Desarrollador de MusicSky, el usuario " + name + ", con el número " + num + ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!");
-    window.open(`https://wa.me/240222084663?text=${msg}`, '_blank');
+    window.open(`https://wa.me/240222084663?text=${msg}`, '_blank'); // Fixed WhatsApp URL for developer contact
 };
 
 // ========== PANEL CHATÉA ==========
@@ -327,7 +327,7 @@ document.getElementById('chatWASend').onclick = function () {
     if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
     if (!/^\+?\d{7,16}$/.test(num)) { err.innerText = 'Ingresa un número de WhatsApp válido.'; return; }
     const msg = encodeURIComponent("USUARIO DE MusicSky\nBIENVENIDO AL ESPACIO DE CHAT CON EL DESARROLLADOR DE MusicSky!");
-    window.open(`https://wa.me/240222084663?text=${msg}`, '_blank');
+    window.open(`https://wa.me/${num}?text=${msg}`, '_blank'); // Fixed WhatsApp URL for user contact
 };
 
 // ========== INICIO ==========
