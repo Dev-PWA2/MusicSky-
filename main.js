@@ -1,7 +1,7 @@
 // ========== INIT INDEXEDDB ==========
 const DB_NAME = 'MusicSkyDB';
-const DB_VERSION = 10; // Actualizado a una versión superior para evitar conflictos
-const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // Aumentado a 100 MB
+const DB_VERSION = 11; // Incrementado para actualizar la base de datos
+const MAX_TOTAL_SIZE = 250 * 1024 * 1024; // Ampliado a 250 MB
 
 let db = null;
 
@@ -208,210 +208,6 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
     });
 });
 
-document.getElementById('loginForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    let email = document.getElementById('loginEmail').value.trim().toLowerCase();
-    let password = document.getElementById('loginPassword').value;
-    let errorDiv = document.getElementById('loginError');
-    if (!email || !password) {
-        errorDiv.innerText = 'Rellena todos los campos.';
-        return;
-    }
-    getUser(email, function(user) {
-        if (!user || user.password !== password) {
-            errorDiv.innerText = 'Email o contraseña incorrectos.';
-            return;
-        }
-        if (user.blocked) {
-            errorDiv.innerText = 'Usuario bloqueado. Contacte con el admin.';
-            return;
-        }
-        currentUser = user;
-        document.getElementById('userNameSpan').innerText = user.fullName;
-        document.getElementById('userRoleSpan').innerText = user.role;
-        showPanel('main');
-        showMainByRole();
-        loadMusics();
-        if (currentUser.role === "Administrador") loadUsers();
-    });
-});
-
-document.getElementById('logoutBtn').addEventListener('click', function() {
-    currentUser = null;
-    showPanel('auth');
-    clearLoginForm();
-});
-
-// ========== PANEL PRINCIPAL POR ROL ==========
-function showMainByRole() {
-    let isAdmin = currentUser && currentUser.role === 'Administrador';
-    document.getElementById('tab-users-li').style.display = isAdmin ? 'inline-block' : 'none';
-    document.getElementById('tab-upload').parentElement.style.display =
-        (currentUser.role === 'Administrador' || currentUser.role === 'Usuario') ? 'inline-block' : 'none';
-}
-
-// ========== LISTADO DE MÚSICAS ==========
-function loadMusics() {
-    getAllMusics(function(musics) {
-        musics.sort((a,b)=>new Date(b.date)-new Date(a.date));
-        let html = '';
-        if (!musics.length) html = '<p>No hay músicas subidas aún.</p>';
-        else musics.forEach(music => {
-            html += `<div class="music-item row align-items-center">
-                <div class="col-md-4">
-                    <b>${music.title}</b> <small class="text-muted">${music.details || ''}</small>
-                    <div><small>Subido por: ${music.uploaderName} (${music.uploader})</small></div>
-                    <div><small>Fecha: ${music.date}</small></div>
-                </div>
-                <div class="col-md-4">
-                    <audio controls src="${music.url}"></audio>
-                </div>
-                <div class="col-md-4 text-end">
-                    <a download="${music.title}.mp3" href="${music.url}" class="btn btn-sm btn-outline-primary me-1">Descargar</a>
-                    ${(canEditMusic(music) ? `<button class="btn btn-sm btn-outline-secondary me-1" onclick="editMusic(${music.id})">Editar</button>`:"")}
-                    ${(canDeleteMusic(music) ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteMusicUI(${music.id})">Eliminar</button>`:"")}
-                </div>
-            </div>`;
-        });
-        document.getElementById('musicList').innerHTML = html;
-    });
-}
-function canEditMusic(music) {
-    if (!currentUser) return false;
-    return currentUser.role === 'Administrador' ||
-        (currentUser.role === 'Usuario' && music.uploader === currentUser.email);
-}
-function canDeleteMusic(music) {
-    if (!currentUser) return false;
-    return currentUser.role === 'Administrador' ||
-        (currentUser.role === 'Usuario' && music.uploader === currentUser.email);
-}
-window.editMusic = function(id) {
-    getAllMusics(function(musics){
-        let music = musics.find(m=>m.id===id);
-        if (!music) return;
-        let details = prompt('Editar detalles de la música:', music.details||'');
-        if (details !== null) {
-            music.details = details;
-            putMusic(music, function(){
-                loadMusics();
-            });
-        }
-    });
-};
-window.deleteMusicUI = function(id) {
-    if (!confirm('¿Seguro que deseas eliminar esta música?')) return;
-    deleteMusic(id, function(){
-        loadMusics();
-    });
-};
-
-// ========== SUBIR MÚSICA ==========
-document.getElementById('uploadForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    let fileInput = document.getElementById('musicFile');
-    let title = document.getElementById('musicTitle').value.trim();
-    let details = document.getElementById('musicDetails').value.trim();
-    let errorDiv = document.getElementById('uploadError');
-    let file = fileInput.files[0];
-    if (!file || !/^audio\/mp3|audio\/mpeg|application\/octet-stream$/.test(file.type) && !file.name.endsWith('.mp3')) {
-        errorDiv.innerText = 'Selecciona un archivo MP3 válido.';
-        return;
-    }
-    if (!title) {
-        errorDiv.innerText = 'Introduce un título para la música.';
-        return;
-    }
-    getAllMusics(function(musics) {
-        let totalSize = musics.reduce((ac, m) => ac + (m.url ? Math.round((m.url.length * 3) / 4) : 0), 0);
-        if (totalSize + file.size > MAX_TOTAL_SIZE) {
-            errorDiv.innerText = 'Espacio insuficiente en la aplicación. Elimina canciones antiguas o sube archivos más pequeños.';
-            return;
-        }
-        let reader = new FileReader();
-        reader.onload = function(ev) {
-            let music = {
-                title,
-                details,
-                uploader: currentUser.email,
-                uploaderName: currentUser.fullName,
-                date: new Date().toLocaleString(),
-                url: ev.target.result // base64
-            };
-            putMusic(music, function(ok){
-                if (ok) {
-                    errorDiv.innerText = '';
-                    fileInput.value = '';
-                    document.getElementById('musicTitle').value = '';
-                    document.getElementById('musicDetails').value = '';
-                    loadMusics();
-                } else {
-                    errorDiv.innerText = 'Error al subir música.';
-                }
-            });
-        };
-        reader.readAsDataURL(file);
-    });
-});
-
-// ========== GESTIÓN DE USUARIOS (ADMIN) ==========
-function loadUsers() {
-    getAllUsers(function(users) {
-        let html = `<table class="table table-bordered table-sm">
-            <thead><tr>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Rol</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr></thead><tbody>`;
-        users.forEach(user => {
-            html += `<tr>
-                <td>${user.fullName}</td>
-                <td>${user.email}</td>
-                <td>${user.role}</td>
-                <td>${user.blocked ? '<span class="text-danger">Bloqueado</span>' : 'Activo'}</td>
-                <td>
-                    <button class="btn btn-sm btn-${user.blocked ? 'success' : 'warning'} me-1" onclick="toggleBlock('${user.email}',${!user.blocked})">
-                        ${user.blocked ? 'Desbloquear' : 'Bloquear'}
-                    </button>
-                    <button class="btn btn-sm btn-danger me-1" onclick="deleteUserUI('${user.email}')">Eliminar</button>
-                    <button class="btn btn-sm btn-secondary" onclick="editUserUI('${user.email}')">Editar</button>
-                </td>
-            </tr>`;
-        });
-        html += '</tbody></table>';
-        document.getElementById('usersList').innerHTML = html;
-    });
-}
-window.toggleBlock = function(email, block) {
-    getUser(email, function(user){
-        if (!user) return;
-        user.blocked = block;
-        putUser(user, function(){
-            loadUsers();
-        });
-    });
-};
-window.deleteUserUI = function(email) {
-    if (!confirm('¿Seguro que deseas eliminar este usuario?')) return;
-    deleteUser(email, function(){
-        loadUsers();
-    });
-};
-window.editUserUI = function(email) {
-    getUser(email, function(user){
-        if (!user) return;
-        let newName = prompt('Editar nombre completo:', user.fullName);
-        if (newName && newName.trim()) {
-            user.fullName = newName.trim();
-            putUser(user, function(){
-                loadUsers();
-            });
-        }
-    });
-};
-
 // ========== PANEL DESARROLLADOR ==========
 const devPanel = document.getElementById('devPanel');
 const devStep1 = document.getElementById('devStep1');
@@ -461,6 +257,16 @@ document.getElementById('devEmailSend').onclick = function () {
     const asunto = encodeURIComponent("Solicitud de instrucciones para crear cuenta MusicSky");
     const body = encodeURIComponent("Hola Sr. Desarrollador de MusicSky, el usuario " + name + ", con el email " + email + ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!");
     window.open(`mailto:enzemajr@gmail.com?subject=${asunto}&body=${body}`, '_blank');
+};
+document.getElementById('devWASend').onclick = function () {
+    const name = document.getElementById('devWAName').value.trim();
+    const num = document.getElementById('devWANum').value.trim();
+    const err = document.getElementById('devWAErr');
+    err.innerText = '';
+    if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
+    if (!/^\+?\d{7,16}$/.test(num)) { err.innerText = 'Ingresa un número de WhatsApp válido.'; return; }
+    const msg = encodeURIComponent("Hola Sr. Desarrollador de MusicSky, el usuario " + name + ", con el número " + num + ", solicita instrucciones para crear una cuenta de acceso a MusicSky. Gracias!");
+    window.open(`https://wa.me/240222084663?text=${msg}`, '_blank');
 };
 
 // ========== PANEL CHATÉA ==========
