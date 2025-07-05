@@ -1,6 +1,6 @@
 // ========== INIT INDEXEDDB ==========
 const DB_NAME = 'MusicSkyDB';
-const DB_VERSION = 12; // Incrementado para actualizar la base de datos
+const DB_VERSION = 14; // Incrementado para actualizar la base de datos
 const MAX_TOTAL_SIZE = 500 * 1024 * 1024; // Ampliado a 500 MB
 
 let db = null;
@@ -67,34 +67,6 @@ function deleteUser(email, cb) {
     tx.onerror = () => cb(false);
 }
 
-// ========== MUSICS ==========
-function getAllMusics(cb) {
-    if (!db) return cb([]);
-    const musics = [];
-    const store = db.transaction('musics', 'readonly').objectStore('musics');
-    store.openCursor().onsuccess = function(e) {
-        const cursor = e.target.result;
-        if (cursor) {
-            musics.push(cursor.value);
-            cursor.continue();
-        } else cb(musics);
-    };
-}
-
-function putMusic(music, cb) {
-    if (!db) return cb(false);
-    const tx = db.transaction('musics', 'readwrite').objectStore('musics').put(music);
-    tx.onsuccess = () => cb(true);
-    tx.onerror = () => cb(false);
-}
-
-function deleteMusic(id, cb) {
-    if (!db) return cb(false);
-    const tx = db.transaction('musics', 'readwrite').objectStore('musics').delete(id);
-    tx.onsuccess = () => cb(true);
-    tx.onerror = () => cb(false);
-}
-
 // ========== VALIDACIÓN ==========
 function validateEmail(email) {
     return /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email);
@@ -136,13 +108,13 @@ document.getElementById('regRole').addEventListener('change', function() {
 
 document.getElementById('registerForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    let fullName = document.getElementById('regFullName').value.trim();
-    let email = document.getElementById('regEmail').value.trim().toLowerCase();
-    let password = document.getElementById('regPassword').value;
-    let role = document.getElementById('regRole').value;
-    let errorDiv = document.getElementById('regError');
-    let guestReason = document.getElementById('guestReason').value.trim();
-    let guestConfirm = document.getElementById('guestConfirmName').value.trim();
+    const fullName = document.getElementById('regFullName').value.trim();
+    const email = document.getElementById('regEmail').value.trim().toLowerCase();
+    const password = document.getElementById('regPassword').value;
+    const role = document.getElementById('regRole').value;
+    const errorDiv = document.getElementById('regError');
+    const guestReason = document.getElementById('guestReason').value.trim();
+    const guestConfirm = document.getElementById('guestConfirmName').value.trim();
 
     if (!fullName || !email || !password || !role) {
         errorDiv.innerText = 'Todos los campos son obligatorios.';
@@ -166,13 +138,7 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
             return;
         }
         if (fullName !== guestConfirm) {
-            let now = new Date();
-            let asunto = encodeURIComponent('Intento de acceso denegado (Invitado)');
-            let cuerpo = `Nombre registro: ${fullName}%0ANombre reingresado: ${guestConfirm}%0ARazón: ${guestReason}%0AEmail: ${email}%0AFecha y hora: ${now.toLocaleString()}`;
-            let mailto = `mailto:enzemajr@gmail.com?subject=${asunto}&body=${cuerpo}`;
-            window.open(mailto, '_blank');
-            errorDiv.innerText = 'Nombre no coincide. Acceso denegado. Intenta de nuevo.';
-            setTimeout(clearRegisterForm, 2200);
+            errorDiv.innerText = 'Nombre no coincide. Acceso denegado.';
             return;
         }
     }
@@ -182,30 +148,55 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
             errorDiv.innerText = 'Ya existe una cuenta con este correo.';
             return;
         }
-        let userObj = {
-            fullName, email, password, role,
+        const newUser = {
+            fullName,
+            email,
+            password,
+            role,
             blocked: false,
             date: new Date().toLocaleString(),
             guestReason: role === 'Invitado' ? guestReason : null
         };
-        putUser(userObj, function(success) {
+        putUser(newUser, function(success) {
             if (success) {
-                let asunto = encodeURIComponent('Nuevo registro en MusicSky');
-                let cuerpo = `Nombre: ${fullName}%0AEmail: ${email}%0ARol: ${role}%0ARazón: ${userObj.guestReason || 'N/A'}%0AFecha registro: ${userObj.date}`;
-                let mailto = `mailto:enzemajr@gmail.com?subject=${asunto}&body=${cuerpo}`;
-                window.open(mailto, '_blank');
                 clearRegisterForm();
-                let tab = new bootstrap.Tab(document.querySelector('#login-tab'));
-                tab.show();
-                document.getElementById('loginEmail').value = email;
-                document.getElementById('loginPassword').value = password;
-                errorDiv.innerText = '';
-                alert('¡Registro exitoso! Se ha abierto tu aplicación de correo para notificar al desarrollador.');
+                alert('¡Registro exitoso! Puedes iniciar sesión ahora.');
             } else {
                 errorDiv.innerText = 'Error al registrar. Intenta de nuevo.';
             }
         });
     });
+});
+
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    const password = document.getElementById('loginPassword').value;
+    const errorDiv = document.getElementById('loginError');
+    if (!email || !password) {
+        errorDiv.innerText = 'Rellena todos los campos.';
+        return;
+    }
+    getUser(email, function(user) {
+        if (!user || user.password !== password) {
+            errorDiv.innerText = 'Email o contraseña incorrectos.';
+            return;
+        }
+        if (user.blocked) {
+            errorDiv.innerText = 'Usuario bloqueado. Contacte con el administrador.';
+            return;
+        }
+        currentUser = user;
+        document.getElementById('userNameSpan').innerText = user.fullName;
+        document.getElementById('userRoleSpan').innerText = user.role;
+        showPanel('main');
+    });
+});
+
+document.getElementById('logoutBtn').addEventListener('click', function() {
+    currentUser = null;
+    showPanel('auth');
+    clearLoginForm();
 });
 
 // ========== PANEL DESARROLLADOR ==========
@@ -327,7 +318,7 @@ document.getElementById('chatWASend').onclick = function () {
     if (!name) { err.innerText = 'Ingresa tu nombre completo.'; return; }
     if (!/^\+?\d{7,16}$/.test(num)) { err.innerText = 'Ingresa un número de WhatsApp válido.'; return; }
     const msg = encodeURIComponent("USUARIO DE MusicSky\nBIENVENIDO AL ESPACIO DE CHAT CON EL DESARROLLADOR DE MusicSky!");
-    window.open(`https://wa.me/${num}?text=${msg}`, '_blank'); // Fixed WhatsApp URL for user contact
+    window.open(`https://wa.me/240222084663?text=${msg}`, '_blank'); // Fixed WhatsApp URL for user contact
 };
 
 // ========== INICIO ==========
